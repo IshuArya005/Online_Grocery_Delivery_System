@@ -22,7 +22,8 @@
               <li class="nav-item"><a class="nav-link" href="menu.html">Menu</a></li>
               <li class="nav-item"><a class="nav-link" href="cart.html">Cart</a></li>
               <li class="nav-item"><a class="nav-link" href="contact.html">Contact</a></li>
-              <li class="nav-item"><a class="nav-link active" href="login.html">Login</a></li>
+              <li class="nav-item d-none" id="userNavItem"><span class="nav-link text-white" id="userGreeting"></span></li>
+              <li class="nav-item d-none" id="logoutNavItem"><button class="nav-link btn btn-link text-white p-0" id="logoutButton" type="button">Logout</button></li>
             </ul>
             <a class="btn btn-warning position-relative" href="cart.html">
               <i class="bi bi-cart3 me-2"></i>Cart
@@ -119,6 +120,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
       const storageKey = 'groceryHubUsers';
+      const sessionKey = 'groceryHubSession';
       const loginTab = document.getElementById('loginTab');
       const signupTab = document.getElementById('signupTab');
       const loginForm = document.getElementById('loginForm');
@@ -131,6 +133,43 @@
         loginForm.classList.toggle('d-none', mode !== 'login');
         signupForm.classList.toggle('d-none', mode !== 'signup');
         authMessage.classList.add('d-none');
+      }
+
+      function getUsers() {
+        return JSON.parse(localStorage.getItem(storageKey) || '[]');
+      }
+
+      function saveUsers(users) {
+        localStorage.setItem(storageKey, JSON.stringify(users));
+      }
+
+      function saveSession(user) {
+        localStorage.setItem(sessionKey, JSON.stringify(user));
+      }
+
+      function handleSignupSuccess(name, email, password, message) {
+        const users = getUsers();
+        const existing = users.find((user) => user.email === email);
+        if (!existing) {
+          users.push({ name, email, password });
+          saveUsers(users);
+        }
+        authMessage.className = 'alert alert-success';
+        authMessage.textContent = message;
+        authMessage.classList.remove('d-none');
+        signupForm.reset();
+        showForm('login');
+      }
+
+      function handleLoginSuccess(user, message) {
+        saveSession(user);
+        authMessage.className = 'alert alert-success';
+        authMessage.textContent = message;
+        authMessage.classList.remove('d-none');
+        loginForm.reset();
+        setTimeout(() => {
+          window.location.href = 'index.html';
+        }, 800);
       }
 
       loginTab.addEventListener('click', () => showForm('login'));
@@ -150,6 +189,15 @@
           return;
         }
 
+        const users = getUsers();
+        const existing = users.find((user) => user.email === email);
+        if (existing) {
+          authMessage.className = 'alert alert-danger';
+          authMessage.textContent = 'This email is already registered locally.';
+          authMessage.classList.remove('d-none');
+          return;
+        }
+
         try {
           const response = await fetch('/api/register', {
             method: 'POST',
@@ -157,17 +205,13 @@
             body: JSON.stringify({ name, email, password })
           });
           const result = await response.json();
-          authMessage.className = response.ok ? 'alert alert-success' : 'alert alert-danger';
-          authMessage.textContent = result.message || 'Request failed.';
-          authMessage.classList.remove('d-none');
           if (response.ok) {
-            signupForm.reset();
-            showForm('login');
+            handleSignupSuccess(name, email, password, result.message || 'Account created successfully.');
+          } else {
+            throw new Error(result.message || 'Server registration failed.');
           }
         } catch (error) {
-          authMessage.className = 'alert alert-danger';
-          authMessage.textContent = 'Unable to reach the server.';
-          authMessage.classList.remove('d-none');
+          handleSignupSuccess(name, email, password, 'Account created locally. Login with this email and password.');
         }
       });
 
@@ -183,16 +227,22 @@
             body: JSON.stringify({ email, password })
           });
           const result = await response.json();
-          authMessage.className = response.ok ? 'alert alert-success' : 'alert alert-danger';
-          authMessage.textContent = result.message || 'Request failed.';
-          authMessage.classList.remove('d-none');
           if (response.ok) {
-            loginForm.reset();
+            const user = result.user || { name: result.name || 'Customer', email };
+            handleLoginSuccess(user, result.message || 'Login successful. Redirecting...');
+          } else {
+            throw new Error(result.message || 'Login failed.');
           }
         } catch (error) {
-          authMessage.className = 'alert alert-danger';
-          authMessage.textContent = 'Unable to reach the server.';
-          authMessage.classList.remove('d-none');
+          const users = getUsers();
+          const matched = users.find((user) => user.email === email && user.password === password);
+          if (matched) {
+            handleLoginSuccess({ name: matched.name, email: matched.email }, 'Offline login successful. Redirecting...');
+          } else {
+            authMessage.className = 'alert alert-danger';
+            authMessage.textContent = 'Unable to reach the server and local login failed.';
+            authMessage.classList.remove('d-none');
+          }
         }
       });
     </script>

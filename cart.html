@@ -22,8 +22,12 @@
               <li class="nav-item"><a class="nav-link" href="menu.html">Menu</a></li>
               <li class="nav-item"><a class="nav-link" href="cart.html">Cart</a></li>
               <li class="nav-item"><a class="nav-link" href="contact.html">Contact</a></li>
-              <li class="nav-item"><a class="nav-link" href="login.html">Login</a></li>
+              <li class="nav-item d-none" id="userNavItem"><span class="nav-link text-white" id="userGreeting"></span></li>
+              <li class="nav-item d-none" id="logoutNavItem"><button class="nav-link btn btn-link text-white p-0" id="logoutButton" type="button">Logout</button></li>
             </ul>
+            <a class="btn btn-outline-light" href="login.html" id="loginNavItem">
+              <i class="bi bi-box-arrow-in-right me-2"></i>Login
+            </a>
             <a class="btn btn-warning position-relative" href="cart.html">
               <i class="bi bi-cart3 me-2"></i>Cart
               <span id="cartBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">0</span>
@@ -67,6 +71,10 @@
               <div class="mb-3">
                 <label for="customerEmail" class="form-label">Email</label>
                 <input id="customerEmail" class="form-control" type="email" required />
+              </div>
+              <div class="mb-3">
+                <label for="customerPhone" class="form-label">Phone</label>
+                <input id="customerPhone" class="form-control" type="tel" placeholder="+91 98765 43210" required />
               </div>
               <div class="mb-3">
                 <label for="customerAddress" class="form-label">Delivery address</label>

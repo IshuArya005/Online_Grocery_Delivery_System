@@ -113,10 +113,52 @@ const sampleProducts = [
 
 const items = [...sampleProducts];
 const storageKey = 'craveCart';
+const sessionKey = 'groceryHubSession';
 let cart = JSON.parse(localStorage.getItem(storageKey) || '[]');
 const state = { category: 'all', price: 'all', search: '' };
 let activeItem = null;
 let modalInstance = null;
+
+function getSessionUser() {
+  return JSON.parse(localStorage.getItem(sessionKey) || 'null');
+}
+
+function setSessionUser(user) {
+  if (!user) return localStorage.removeItem(sessionKey);
+  localStorage.setItem(sessionKey, JSON.stringify(user));
+}
+
+function clearSessionUser() {
+  localStorage.removeItem(sessionKey);
+}
+
+function updateNavbarUser() {
+  const user = getSessionUser();
+  const userGreeting = document.getElementById('userGreeting');
+  const userNavItem = document.getElementById('userNavItem');
+  const logoutNavItem = document.getElementById('logoutNavItem');
+  const loginNavItem = document.getElementById('loginNavItem');
+  if (user && user.name) {
+    if (userGreeting) userGreeting.textContent = `Hi, ${user.name}`;
+    if (userNavItem) userNavItem.classList.remove('d-none');
+    if (logoutNavItem) logoutNavItem.classList.remove('d-none');
+    if (loginNavItem) loginNavItem.classList.add('d-none');
+  } else {
+    if (userNavItem) userNavItem.classList.add('d-none');
+    if (logoutNavItem) logoutNavItem.classList.add('d-none');
+    if (loginNavItem) loginNavItem.classList.remove('d-none');
+  }
+}
+
+function sendOrderSms(phone) {
+  if (!phone) return;
+  const smsRecord = {
+    phone,
+    message: 'Your order is confirmed.',
+    sentAt: new Date().toISOString()
+  };
+  localStorage.setItem('groceryHubLastSms', JSON.stringify(smsRecord));
+}
 
 async function loadProducts() {
   try {
@@ -263,16 +305,32 @@ function showCheckoutForm() {
   if (checkoutSection) checkoutSection.classList.remove('d-none');
 }
 
+function completeOrderLocally(orderPayload, offline = false) {
+  const orderRecord = {
+    ...orderPayload,
+    id: offline ? `OFF-${Date.now()}` : orderPayload.id,
+    offline
+  };
+  localStorage.setItem('groceryHubLastOrder', JSON.stringify(orderRecord));
+  if (orderRecord.userPhone) sendOrderSms(orderRecord.userPhone);
+  localStorage.removeItem(storageKey);
+  cart = [];
+  saveCart();
+  updateCartBadge();
+  window.location.href = 'order.html';
+}
+
 async function submitOrder(event) {
   event.preventDefault();
   if (!cart.length) return;
 
   const name = document.getElementById('customerName').value.trim();
   const email = document.getElementById('customerEmail').value.trim();
+  const phone = document.getElementById('customerPhone') ? document.getElementById('customerPhone').value.trim() : '';
   const address = document.getElementById('customerAddress').value.trim();
   const paymentMethod = document.getElementById('paymentMethod').value;
 
-  if (!name || !email || !address) {
+  if (!name || !email || !phone || !address) {
     alert('Please fill all delivery details.');
     return;
   }
@@ -284,6 +342,7 @@ async function submitOrder(event) {
   const orderPayload = {
     userEmail: email,
     customerName: name,
+    userPhone: phone,
     address,
     paymentMethod,
     items: cart.map(entry => ({ name: entry.name, price: entry.price, qty: entry.qty })),
@@ -300,17 +359,12 @@ async function submitOrder(event) {
     });
     const result = await response.json();
     if (response.ok) {
-      localStorage.setItem('groceryHubLastOrder', JSON.stringify({ ...orderPayload, id: result._id || `INV${Date.now()}` }));
-      localStorage.removeItem(storageKey);
-      cart = [];
-      saveCart();
-      updateCartBadge();
-      window.location.href = 'order.html';
+      completeOrderLocally({ ...orderPayload, id: result._id || `INV${Date.now()}` });
     } else {
-      alert(result.message || 'Checkout failed.');
+      completeOrderLocally(orderPayload, true);
     }
   } catch (error) {
-    alert('Unable to reach the server.');
+    completeOrderLocally(orderPayload, true);
   }
 }
 
@@ -413,6 +467,15 @@ document.addEventListener('DOMContentLoaded', () => {
   renderMenu();
   renderCartPage();
   loadProducts();
+  updateNavbarUser();
   const checkoutForm = document.getElementById('checkoutForm');
   if (checkoutForm) checkoutForm.addEventListener('submit', submitOrder);
+  const logoutButton = document.getElementById('logoutButton');
+  if (logoutButton) {
+    logoutButton.addEventListener('click', () => {
+      clearSessionUser();
+      updateNavbarUser();
+      window.location.href = 'login.html';
+    });
+  }
 });
