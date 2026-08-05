@@ -8,7 +8,7 @@ This project was developed using **HTML, CSS, JavaScript, React.js, Node.js, Exp
 
 # 🚀 Features
 
-### 👤 User Features      
+#👤 User Features      
 
 * User Registration (Sign Up)
 * User Login
