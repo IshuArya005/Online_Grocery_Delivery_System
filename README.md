@@ -1,6 +1,6 @@
 # 🛒 Online Grocery Shop
 
-## 📌 Project Overview
+📌 Project Overview
 
 The **Online Grocery Shop** is a full-stack web application that allows users to browse grocery products, add items to their cart, and place orders through a secure and user-friendly interface. The platform also provides an **Admin Dashboard** to manage products and monitor orders.
 
