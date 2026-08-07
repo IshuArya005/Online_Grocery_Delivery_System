@@ -7,7 +7,7 @@ The **Online Grocery Shop** is a full-stack web application that allows users to
 This project was developed using **HTML, CSS, JavaScript, React.js, Node.js, Express.js, and MongoDB**.  
 
 # 🚀 Features
-
+    
 #👤 User Features      
 
 * User Registration (Sign Up)
