@@ -31,7 +31,7 @@ This project was developed using **HTML, CSS, JavaScript, React.js, Node.js, Exp
 * Displays total price
 * Proceed to Checkout
 
-### 💳 Payment
+### 💳 Payment    
 
 * Cash on Delivery (COD)
 * Online Payment (Demo)
