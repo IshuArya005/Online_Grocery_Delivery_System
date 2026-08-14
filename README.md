@@ -11,7 +11,7 @@ This project was developed using **HTML, CSS, JavaScript, React.js, Node.js, Exp
 #👤 User Features         
 
 * User Registration (Sign Up)
-* User Login
+* User Login  
 * Browse grocery products     
 * Responsive Home Page
 * Product Categories
